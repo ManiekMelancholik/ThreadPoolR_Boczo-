@@ -13,5 +13,9 @@ namespace ThreadPoolR_Boczoń
     /// </summary>
     public partial class App : Application
     {
+        private void AppInitialization(object o, StartupEventArgs e)
+        {
+            MainWindowModelView mv = new MainWindowModelView(true);
+        }
     }
 }

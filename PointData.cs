@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Shapes;
 
 namespace ThreadPoolR_Boczoń
 {
@@ -11,12 +12,21 @@ namespace ThreadPoolR_Boczoń
     {
         double x;
         double y;
-        Color color;
-        public PointData(double x, double y, Color color)
+        Ellipse point;
+        public PointData(double x, double y, System.Windows.Media.Brush color)
         {
             this.x = x;
             this.y = y;
-            this.color = color;
+            point = new Ellipse();
+            point.Width = 1;
+            point.Height = 1;
+            point.Fill = color;
+        }
+        public Ellipse SetToCanvas(double width, double height)
+        {
+            System.Windows.Controls.Canvas.SetLeft(point, width * x);
+            System.Windows.Controls.Canvas.SetTop(point, height * y);
+            return point;
         }
     }
 }

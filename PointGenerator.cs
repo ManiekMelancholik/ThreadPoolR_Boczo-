@@ -1,23 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace ThreadPoolR_Boczoń
 {
     public class PointGenerator
     {
-        private Color color;
+        private Brush color;
         private List<PointData> collection;
         private Thread thread;
         private long sleepTime;
         public PointGenerator(Color color, List<PointData> collection, float sleep)
         {
-            this.color = color;
+            this.color = new SolidColorBrush(color);
             this.collection = collection;
             sleepTime = (long) sleep*TimeSpan.TicksPerMillisecond;
             thread = new Thread(GeneratePoint);
@@ -37,13 +40,13 @@ namespace ThreadPoolR_Boczoń
                 current= DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                 if (start + sleepTime <= current)
                 {
-
                     PointData point = new PointData(
                         rng.NextDouble(),
                         rng.NextDouble(),
                         color
                         );
-
+                    
+                    
                     collection.Add(point);
 
                     start = current;

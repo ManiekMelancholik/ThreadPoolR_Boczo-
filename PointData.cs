@@ -18,8 +18,8 @@ namespace ThreadPoolR_Boczoń
             this.x = x;
             this.y = y;
             point = new Ellipse();
-            point.Width = 1;
-            point.Height = 1;
+            point.Width = 10;
+            point.Height = 10;
             point.Fill = color;
         }
         public Ellipse SetToCanvas(double width, double height)

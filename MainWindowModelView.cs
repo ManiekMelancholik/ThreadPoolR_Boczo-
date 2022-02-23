@@ -1,22 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace ThreadPoolR_Boczoń
 {
     public class MainWindowModelView
     {
-        private MainWindow window;
+        public MainWindow window;
+        private Canvas canvas;
         public MainWindowModelView() { }
+        private ObservableCollection<System.Windows.Shapes.Ellipse> _collcetion = new ObservableCollection<System.Windows.Shapes.Ellipse>();
+        public ObservableCollection<System.Windows.Shapes.Ellipse> collcetion
+        {
+            get
+            {
+                return _collcetion;
+            }
+            
+        }
         public MainWindowModelView(bool t)
         {
+
             window = new MainWindow();
             window.Show();
             window.DataContext = this;
+            canvas = window.display;
+            ThreadMenager.Setup(canvas);
+            //ThreadMenager.GenSomePoints();
         }
 
 
@@ -52,7 +70,7 @@ namespace ThreadPoolR_Boczoń
             }
         }
 
-       
+
         private float _pixelsPerSecond = MIN_PIXELS;
         public string pixelsPerSecond
         {
@@ -91,7 +109,9 @@ namespace ThreadPoolR_Boczoń
                     _start = new ComandClass(
                         e =>
                         {
+                            ThreadMenager.TestStart(window.display, this);
                            // MessageBox.Show("START CLICKED");
+                            //DrawPoint(new System.Windows.Shapes.Ellipse());
                         },
                         ce =>
                         {
@@ -103,7 +123,7 @@ namespace ThreadPoolR_Boczoń
             }
         }
 
-        
+
         public ICommand stop
         {
             get
@@ -125,7 +145,7 @@ namespace ThreadPoolR_Boczoń
             }
         }
 
-       
+
         public ICommand clear
         {
             get
@@ -147,9 +167,26 @@ namespace ThreadPoolR_Boczoń
             }
         }
         #endregion
+        // private static System.Windows.Shapes.Ellipse elipse;
 
-        
+       // public delegate void UpdateCanvas(System.Windows.Shapes.Ellipse elipse);
+        public void DrawPoint(System.Windows.Shapes.Ellipse e)
+        {
+            var elipse = new System.Windows.Shapes.Ellipse();
+            elipse.Fill = Brushes.Red;
+            System.Windows.Controls.Canvas.SetLeft(elipse, 100);
+            System.Windows.Controls.Canvas.SetTop(elipse, 200);
+            elipse.Width = 10;
+            elipse.Height = 5;
+            
+            canvas.Dispatcher.Invoke(()=>{ canvas.Children.Add(elipse); });
+          
+                    
+        }
     }
 
 
 }
+   
+
+

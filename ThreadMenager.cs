@@ -93,31 +93,23 @@ namespace ThreadPoolR_Boczoń
         {
             Brush brush = new SolidColorBrush(RED);
             Random r = new Random();
-            // COLLECTION_OF_POINTS.Add(new PointData(r.NextDouble(), r.NextDouble(), brush));
+          
             GenDelegate();
             Thread.Sleep(1000);
-            //canvas.Children.Add(elipse);
+           
             canvas.Dispatcher.Invoke(() => {
 
-                //var elipse = new System.Windows.Shapes.Ellipse();
-                //elipse.Fill = Brushes.Red;
-                //System.Windows.Controls.Canvas.SetLeft(elipse, 100);
-                //System.Windows.Controls.Canvas.SetTop(elipse, 200);
-                //elipse.Width = 10;
-                //elipse.Height = 5;
+                
 
-                canvas.Children.Add(list[0].Invoke()); });
-           // canvas.Dispatcher.BeginInvoke((Action)(() => { mWMV.DrawPoint(elipse); }));
-
-
-
+                canvas.Children.Add(list[0].Invoke()); 
+            });
+          
         }
         private delegate System.Windows.Shapes.Ellipse TestDeleg();
         private static List<TestDeleg> list = new List<TestDeleg>();
         public static void GenDelegate()
         {
             Thread tt = new Thread(
-                
                     () =>
                     {
                         list.Add(new TestDeleg(
@@ -131,9 +123,8 @@ namespace ThreadPoolR_Boczoń
                                     elipse.Height = 5;
                                     return elipse;
                                 }
-                            ));
+                                ));
                     }
-                
                 );
             tt.Start();
         }
@@ -143,8 +134,6 @@ namespace ThreadPoolR_Boczoń
         }
         public static void TestStart(System.Windows.Controls.Canvas c,MainWindowModelView mv)
         {
-            //mWMV=mv;
-            //canvas = c;
             perSec = 4;
             ThreadPoolMainThread = new Thread(PixelDrawing);
             ThreadPoolMainThread.SetApartmentState(ApartmentState.STA);

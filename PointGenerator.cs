@@ -1,82 +1,91 @@
 ﻿using System;
 using System.Collections.Generic;
-
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace ThreadPoolR_Boczoń
 {
     public class PointGenerator
     {
+
         private Brush color;
-        private List<PointData> collection;
         private Thread thread;
-        private long sleepTime;
-        public PointGenerator(Color color, List<PointData> collection, float sleep)
+        private delegate System.Windows.Shapes.Ellipse GenerateElipse();
+        
+        #region Contructors
+        public PointGenerator(Color color)
         {
             this.color = new SolidColorBrush(color);
-            this.collection = collection;
-            sleepTime = (long) sleep*TimeSpan.TicksPerMillisecond;
             thread = new Thread(GeneratePoint);
             thread.IsBackground = true;
         }
-
+        #endregion
+        /*
+         * MAIN  METHOD EXECUTED BY THREAD - GENERATES DELEGATES 
+         */
         private void GeneratePoint()
         {
-            long start,
-                current;
-
-            start = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             System.Random rng = new Random();
             
             while (thread.IsAlive)
             {
-                current= DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                if (start + sleepTime <= current)
-                {
-                    PointData point = new PointData(
-                        rng.NextDouble(),
-                        rng.NextDouble(),
-                        color
-                        );
-                    
-                    
-                    collection.Add(point);
-
-                    start = current;
-                }
+                 
             }
         }
 
+        /*
+         * StartGeneration()
+         * StopGeneration
+         * EndGeneration
+         */
+        #region Thread operations 
         public void StartGeneration() 
         {
-            try
+            if (thread.ThreadState == ThreadState.Unstarted)
             {
-                thread.Start();
+                try
+                {
+                    thread.Start();
+                }
+                catch (ThreadStartException e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+                return;
             }
-            catch (ThreadStartException e)
+            if(thread.ThreadState == ThreadState.Stopped)
             {
-                MessageBox.Show(e.Message);
+                try
+                {
+                    thread.Resume();
+                }
+                catch (ThreadStartException e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+                return;
             }
+            
         }
         public void StopGeneration()
         {
+           
+            thread.Suspend();
+            
+        }
+        public void EndGeneration()
+        {
             try
             {
-                thread.Suspend();
+                thread.Abort();
             }
-            catch(ThreadStateException e)
+            catch(ThreadAbortException e)
             {
                 MessageBox.Show(e.Message);
             }
         }
-
+        #endregion
 
     }
 }

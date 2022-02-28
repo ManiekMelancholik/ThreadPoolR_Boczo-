@@ -11,16 +11,22 @@ namespace ThreadPoolR_Boczoń
 {
     public static class ThreadMenager
     {
-        private static Thread ThreadPoolMainThread;
+        
         private static int iterator = 0;
-        private static List<PointData> COLLECTION_OF_POINTS = new List<PointData>();
-        private static object _addPointLocker = new object();
-        private static List<Color> _THREAD_COLORS;
-        private static System.Windows.Controls.Canvas canvas;
         private static float perSec;
-       // public delegate void UpdateCanvas(System.Windows.Shapes.Ellipse elipse);
 
+        private delegate System.Windows.Shapes.Ellipse GenerationCommand();
 
+        private static object _addPointLocker = new object();
+
+        
+
+        private static List<GenerationCommand> generationCommands1 = new List<GenerationCommand>();
+        private static List<GenerationCommand> generationCommands2 = new List<GenerationCommand>();
+
+        private static List<GenerationCommand> currentList = new List<GenerationCommand>();
+        
+        private static List<Color> _THREAD_COLORS;
         #region Colors Initialisation
         private static List<Color> THREAD_COLORS
         {
@@ -87,7 +93,130 @@ namespace ThreadPoolR_Boczoń
 
         #endregion
 
-        static MainWindowModelView mWMV;
+        private static System.Windows.Controls.Canvas output;
+        private static List<PointGenerator> _GENERATORS;
+
+        #region Class Setup
+        public static void CreateGenerators(int number)
+        {
+            for(int i = 0; i>number; i++)
+            {
+                _GENERATORS.Add(new PointGenerator(_THREAD_COLORS[i]));
+            }
+        }
+        public static bool OutputSetup(object outputControl)
+        {
+            if (outputControl.GetType() == typeof(System.Windows.Shapes.Ellipse))
+            {
+                output = (System.Windows.Controls.Canvas)outputControl;
+                return true;
+            }
+            return false;
+        }
+
+        #endregion
+
+        /*
+         * StartAllThreads()
+         * EndAllThreads();
+         * StopAllThreads();
+         */
+        #region Generators menagement
+
+        public static void StopAllThreads()
+        {
+            foreach (PointGenerator PG in _GENERATORS)
+                PG.StopGeneration();
+        }
+        public static void EndAllThreads()
+        {
+            foreach (PointGenerator PG in _GENERATORS)
+                PG.EndGeneration();
+        }
+        public static void StartAllThreads()
+        {
+            foreach (PointGenerator PG in _GENERATORS)
+                PG.StartGeneration();
+        }
+
+        #endregion
+
+
+        private static Thread ThreadPoolMainThread;
+        /*
+         * Start()
+         * Stop()
+         * End()
+         */
+        #region Thread menagement
+
+        public static void Start()
+        {
+            if(ThreadPoolMainThread == null)
+            {
+                ThreadPoolMainThread = new Thread(PixelDrawing);
+                try
+                {
+                    ThreadPoolMainThread.Start();
+                }
+                catch(ThreadStartException e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+                return;
+            }
+
+            if(ThreadPoolMainThread.ThreadState == ThreadState.Unstarted)
+            {
+                try
+                {
+                    ThreadPoolMainThread.Start();
+                }
+                catch (ThreadStartException e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+                return;
+            }
+
+            if (ThreadPoolMainThread.ThreadState == ThreadState.Running)
+            {
+                return;
+            }
+
+            if(ThreadPoolMainThread.ThreadState == ThreadState.Suspended)
+            {
+                try
+                {
+                    ThreadPoolMainThread.Resume();
+                }
+                catch (ThreadStartException e)
+                {
+                    MessageBox.Show(e.Message);
+                }
+                return;
+            }
+
+
+        }
+        public static void Stop()
+        {
+            ThreadPoolMainThread.Suspend();
+        }
+        public static void End()
+        {
+            try
+            {
+                ThreadPoolMainThread.Abort();
+            }
+            catch (ThreadAbortException e)
+            {
+                MessageBox.Show(e.Message);
+            }
+        }
+
+        #endregion
+
         public delegate void del();
         private static void PixelDrawing()
         {
@@ -97,11 +226,9 @@ namespace ThreadPoolR_Boczoń
             GenDelegate();
             Thread.Sleep(1000);
            
-            canvas.Dispatcher.Invoke(() => {
+            output.Dispatcher.Invoke(() => {
 
-                
-
-                canvas.Children.Add(list[0].Invoke()); 
+                output.Children.Add(list[0].Invoke()); 
             });
           
         }
@@ -128,25 +255,7 @@ namespace ThreadPoolR_Boczoń
                 );
             tt.Start();
         }
-       public static void Setup(System.Windows.Controls.Canvas c)
-        {
-            canvas = c;
-        }
-        public static void TestStart(System.Windows.Controls.Canvas c,MainWindowModelView mv)
-        {
-            perSec = 4;
-            ThreadPoolMainThread = new Thread(PixelDrawing);
-            ThreadPoolMainThread.SetApartmentState(ApartmentState.STA);
-            ThreadPoolMainThread.IsBackground = true;
-            ThreadPoolMainThread.Start();
-           
-        }
-        public static void GenSomePoints()
-        {
-            Brush brush = new SolidColorBrush(RED);
-            Random r = new Random();
-            for (int i = 0; i < 100; i++)
-                COLLECTION_OF_POINTS.Add(new PointData(r.NextDouble(), r.NextDouble(), brush));
-        }
+       
+       
     }
 }

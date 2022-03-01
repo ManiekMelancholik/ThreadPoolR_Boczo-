@@ -78,7 +78,7 @@
 
                 <Border Grid.Column="1" Padding="5,0,5,10"
                     Width="70">
-                    <TextBox Text="{Binding numberOfThreads ,Mode=TwoWay}"/>
+                    <TextBox Text="{Binding numberOfThreads ,Mode=OneWayToSource}"/>
                 </Border>
 
                 <TextBlock Grid.Column="2"
@@ -87,7 +87,7 @@
 
                 <Border Grid.Column="3" Padding="5,0,5,10"
                     Width="130">
-                    <TextBox Text="{Binding pixelsPerSecond, Mode=TwoWay}"/>
+                    <TextBox Text="{Binding pixelsPerSecond, Mode=OneWayToSource}"/>
                 </Border>
 
                 <TextBlock Grid.Column="4"

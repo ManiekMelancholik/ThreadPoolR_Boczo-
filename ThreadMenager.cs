@@ -9,23 +9,27 @@ using System.Windows.Media;
 
 namespace ThreadPoolR_Boczoń
 {
-    public static class ThreadMenager
+    public class ThreadMenager
     {
-        
-        private static int iterator = 0;
-        private static float perSec;
+        private List<GenerationCommand> generationCommands1;
+        private List<GenerationCommand> generationCommands2;
+        private List<GenerationCommand> readList;
+        private List<GenerationCommand> writeList;
+        /*
+         * ThreadMenager()
+         */
+        #region Constructors
+        public ThreadMenager()
+        {
+            generationCommands1 = new List<GenerationCommand>();
+            generationCommands2 = new List<GenerationCommand>();
+            readList = generationCommands1;
+            writeList = generationCommands1;
+           // GetPixelLock = new object();
 
-        private delegate System.Windows.Shapes.Ellipse GenerationCommand();
+        }
+        #endregion
 
-        private static object _addPointLocker = new object();
-
-        
-
-        private static List<GenerationCommand> generationCommands1 = new List<GenerationCommand>();
-        private static List<GenerationCommand> generationCommands2 = new List<GenerationCommand>();
-
-        private static List<GenerationCommand> currentList = new List<GenerationCommand>();
-        
         private static List<Color> _THREAD_COLORS;
         #region Colors Initialisation
         private static List<Color> THREAD_COLORS
@@ -92,29 +96,94 @@ namespace ThreadPoolR_Boczoń
         }
 
         #endregion
+        
 
-        private static System.Windows.Controls.Canvas output;
-        private static List<PointGenerator> _GENERATORS;
-
+        private System.Windows.Controls.Canvas output;
+        private List<PointGenerator> _GENERATORS;
+        public delegate System.Windows.Shapes.Ellipse GenerationCommand(double width, double height);
+        private float tempo;
         #region Class Setup
-        public static void CreateGenerators(int number)
+        private void CreateGenerators(int number)
         {
-            for(int i = 0; i>number; i++)
+            _GENERATORS = new List<PointGenerator>();
+            for(int i = 0; i<number; i++)
             {
-                _GENERATORS.Add(new PointGenerator(_THREAD_COLORS[i]));
+                _GENERATORS.Add(new PointGenerator(THREAD_COLORS[i], this));
             }
         }
-        public static bool OutputSetup(object outputControl)
+        public bool OutputSetup(object outputControl)
         {
-            if (outputControl.GetType() == typeof(System.Windows.Shapes.Ellipse))
+            if (outputControl.GetType() == typeof(System.Windows.Controls.Canvas))
             {
                 output = (System.Windows.Controls.Canvas)outputControl;
                 return true;
             }
             return false;
         }
+        public void SetTempo(float tempo)
+        {
+          
+            this.tempo = tempo;
+        }
 
         #endregion
+        public void FullSetup(int amount, float tempo, object outputC)
+        {
+            this.SetTempo(tempo);
+            this.OutputSetup(outputC);
+            this.CreateGenerators(amount);
+        }
+
+
+
+        private void PixelDrawing()
+        {
+            //(System.TimeSpan.TicksPerSecond /
+            //AddPixelGenerationCommand(
+            //            () =>
+            //            {
+            //                System.Windows.Shapes.Ellipse ellipse = new System.Windows.Shapes.Ellipse();
+            //                ellipse.Fill = new SolidColorBrush(THREAD_COLORS[0]);
+            //                ellipse.Width = 10;
+            //                ellipse.Height = 10;
+            //                System.Windows.Controls.Canvas.SetLeft(ellipse, 10);
+            //                System.Windows.Controls.Canvas.SetTop(ellipse, 10);
+            //                return ellipse;
+            //            }
+            //        );
+           // Thread.Sleep((int) tempo);
+            while (writeList.Count < 4)
+            {
+
+            }
+            for (int i = 0; i < 100; i++) {
+                output.Dispatcher.Invoke(() =>
+                {
+                    output.Children.Add(writeList[i].Invoke(output.Width, output.Height));
+                
+                });
+                Thread.Sleep((int)(1000/ tempo));
+            }
+
+        }
+        private object _PixelLock;
+        private object GetPixelLock
+        {
+            get
+            {
+                if (_PixelLock == null)
+                    _PixelLock = new object();
+                return _PixelLock;
+            }
+        }
+public void AddPixelGenerationCommand(GenerationCommand command)
+        {
+            
+            lock (GetPixelLock)
+            {
+                writeList.Add(command);
+            }
+        }
 
         /*
          * StartAllThreads()
@@ -123,17 +192,17 @@ namespace ThreadPoolR_Boczoń
          */
         #region Generators menagement
 
-        public static void StopAllThreads()
+        public void StopAllThreads()
         {
             foreach (PointGenerator PG in _GENERATORS)
                 PG.StopGeneration();
         }
-        public static void EndAllThreads()
+        public void EndAllThreads()
         {
             foreach (PointGenerator PG in _GENERATORS)
                 PG.EndGeneration();
         }
-        public static void StartAllThreads()
+        public void StartAllThreads()
         {
             foreach (PointGenerator PG in _GENERATORS)
                 PG.StartGeneration();
@@ -141,8 +210,7 @@ namespace ThreadPoolR_Boczoń
 
         #endregion
 
-
-        private static Thread ThreadPoolMainThread;
+        private Thread ThreadPoolMainThread;
         /*
          * Start()
          * Stop()
@@ -150,11 +218,12 @@ namespace ThreadPoolR_Boczoń
          */
         #region Thread menagement
 
-        public static void Start()
+        public void Start()
         {
             if(ThreadPoolMainThread == null)
             {
                 ThreadPoolMainThread = new Thread(PixelDrawing);
+                ThreadPoolMainThread.IsBackground = true;
                 try
                 {
                     ThreadPoolMainThread.Start();
@@ -199,11 +268,11 @@ namespace ThreadPoolR_Boczoń
 
 
         }
-        public static void Stop()
+        public void Stop()
         {
             ThreadPoolMainThread.Suspend();
         }
-        public static void End()
+        public void End()
         {
             try
             {
@@ -217,44 +286,35 @@ namespace ThreadPoolR_Boczoń
 
         #endregion
 
-        public delegate void del();
-        private static void PixelDrawing()
-        {
-            Brush brush = new SolidColorBrush(RED);
-            Random r = new Random();
-          
-            GenDelegate();
-            Thread.Sleep(1000);
-           
-            output.Dispatcher.Invoke(() => {
 
-                output.Children.Add(list[0].Invoke()); 
-            });
-          
-        }
-        private delegate System.Windows.Shapes.Ellipse TestDeleg();
-        private static List<TestDeleg> list = new List<TestDeleg>();
-        public static void GenDelegate()
-        {
-            Thread tt = new Thread(
-                    () =>
-                    {
-                        list.Add(new TestDeleg(
-                                () =>
-                                {
-                                    var elipse = new System.Windows.Shapes.Ellipse();
-                                    elipse.Fill = Brushes.Red;
-                                    System.Windows.Controls.Canvas.SetLeft(elipse, 100);
-                                    System.Windows.Controls.Canvas.SetTop(elipse, 200);
-                                    elipse.Width = 10;
-                                    elipse.Height = 5;
-                                    return elipse;
-                                }
-                                ));
-                    }
-                );
-            tt.Start();
-        }
+
+
+
+
+
+        //private delegate System.Windows.Shapes.Ellipse TestDeleg();
+        //private List<TestDeleg> list = new List<TestDeleg>();
+        //public void GenDelegate()
+        //{
+        //    Thread tt = new Thread(
+        //            () =>
+        //            {
+        //                list.Add(new TestDeleg(
+        //                        () =>
+        //                        {
+        //                            var elipse = new System.Windows.Shapes.Ellipse();
+        //                            elipse.Fill = Brushes.Red;
+        //                            System.Windows.Controls.Canvas.SetLeft(elipse, 100);
+        //                            System.Windows.Controls.Canvas.SetTop(elipse, 200);
+        //                            elipse.Width = 10;
+        //                            elipse.Height = 5;
+        //                            return elipse;
+        //                        }
+        //                        ));
+        //            }
+        //        );
+        //    tt.Start();
+        //}
        
        
     }

@@ -16,36 +16,32 @@ namespace ThreadPoolR_Boczoń
     {
         public MainWindow window;
         private Canvas canvas;
+        private ThreadMenager generatorsMenager;
+        #region Constructors
         public MainWindowModelView() { }
-        private ObservableCollection<System.Windows.Shapes.Ellipse> _collcetion = new ObservableCollection<System.Windows.Shapes.Ellipse>();
-        public ObservableCollection<System.Windows.Shapes.Ellipse> collcetion
-        {
-            get
-            {
-                return _collcetion;
-            }
-            
-        }
+      
         public MainWindowModelView(bool t)
-        {
-
+        { 
             window = new MainWindow();
             window.Show();
             window.DataContext = this;
             canvas = window.display;
-            ThreadMenager.Setup(canvas);
-            //ThreadMenager.GenSomePoints();
+            generatorsMenager = new ThreadMenager();
+            generatorsMenager.OutputSetup(canvas); 
         }
-
+        #endregion
 
         private const int MIN_THREADS = 0;
         private const int MAX_THREADS = 20;
 
         private const float MIN_PIXELS = 0.0F;
         private const float MAX_PIXELS = 100.0F;
+        /*
+         * [ _ ] <-float
+         * numberOfThreads <-string
+         * pixelsPerSecond <-string 
+         */
         #region Binding Fields
-
-
 
         private int _numberOfThreads = MIN_THREADS;
         public string numberOfThreads
@@ -61,6 +57,7 @@ namespace ThreadPoolR_Boczoń
                     _numberOfThreads = MIN_THREADS;
                 else
                 {
+                    _numberOfThreads = x;
                     if (x < MIN_THREADS)
                         _numberOfThreads = MIN_THREADS;
                     if (x > MAX_THREADS)
@@ -85,6 +82,7 @@ namespace ThreadPoolR_Boczoń
                     _pixelsPerSecond = MIN_PIXELS;
                 else
                 {
+                    _pixelsPerSecond = x;
                     if (x < MIN_PIXELS)
                         _pixelsPerSecond = MIN_PIXELS;
                     if (x > MAX_PIXELS)
@@ -109,9 +107,9 @@ namespace ThreadPoolR_Boczoń
                     _start = new ComandClass(
                         e =>
                         {
-                            ThreadMenager.TestStart(window.display, this);
-                           // MessageBox.Show("START CLICKED");
-                            //DrawPoint(new System.Windows.Shapes.Ellipse());
+                            generatorsMenager.FullSetup(_numberOfThreads, _pixelsPerSecond, canvas);
+                            generatorsMenager.StartAllThreads();
+                            generatorsMenager.Start();
                         },
                         ce =>
                         {
@@ -133,7 +131,8 @@ namespace ThreadPoolR_Boczoń
                     _stop = new ComandClass(
                         e =>
                         {
-
+                            generatorsMenager.StopAllThreads();
+                            generatorsMenager.Stop();
                         },
                         ce =>
                         {
@@ -155,7 +154,10 @@ namespace ThreadPoolR_Boczoń
                     _clear = new ComandClass(
                         e =>
                         {
-
+                            generatorsMenager.StopAllThreads();
+                            generatorsMenager.Stop();
+                            generatorsMenager.EndAllThreads();
+                            generatorsMenager.End();
                         },
                         ce =>
                         {

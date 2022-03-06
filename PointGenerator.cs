@@ -8,21 +8,40 @@ namespace ThreadPoolR_Boczoń
 {
     public class PointGenerator
     {
+        private static System.Random _rng = new Random();
 
         private Brush color;
         private Thread thread;
         private delegate System.Windows.Shapes.Ellipse GenerateElipse();
         private ThreadMenager output;
+
+        private GenerationCommand[] output1;
+       
+        private int amount;
+
+        private NextIndex nextOutput;
+        private int _nextOutputIndex;
+
+        private int nextOutputIndex
+        {
+            get
+            {
+                _nextOutputIndex = nextOutput.Invoke(_nextOutputIndex);
+                return _nextOutputIndex;
+            }
+        }
+        private bool endGeneration;
         
         #region Contructors
-        public PointGenerator(Color color, ThreadMenager output)
+        public PointGenerator(Color color, ThreadMenager output, GenerationCommand[] output1)
         {
           
             this.color = new SolidColorBrush(color);
             this.output = output;
-            thread = new Thread(GeneratePoint);
-            thread.IsBackground = true;
+            this.output1 = output1;
+
             
+            endGeneration = false;
         }
         #endregion
         /*
@@ -31,33 +50,36 @@ namespace ThreadPoolR_Boczoń
         
         private void GeneratePoint()
         {
-            //MessageBox.Show("Adding");
-            System.Random rng = new Random();
-            double x;
-            double y;
-            x = rng.NextDouble();
-            y = rng.NextDouble();
+            //double x;
+            //double y;
+            //x = _rng.NextDouble();
+            //y = _rng.NextDouble();
+            // int i = 0;
 
-            for (int i = 0; i < 20; i++)
+            //while (!endGeneration)
+            for (int i = 0; i < amount; i++)
             {
+                if (endGeneration)
+                {
+                    break;
+                }
                 //x = rng.NextDouble();
                 //y = rng.NextDouble();
-               
 
-                output.AddPixelGenerationCommand(
-
+                //output.AddPixelGenerationCommand(
+                output1[nextOutputIndex] =
                     (double width, double height) =>
                     {
                         System.Windows.Shapes.Ellipse ellipse = new System.Windows.Shapes.Ellipse();
                         ellipse.Fill = color;
                         ellipse.Width = 10;
                         ellipse.Height = 10;
-                        System.Windows.Controls.Canvas.SetLeft(ellipse, rng.NextDouble() * width);
-                        System.Windows.Controls.Canvas.SetTop(ellipse, rng.NextDouble() * height);
+                        System.Windows.Controls.Canvas.SetLeft(ellipse, _rng.NextDouble() * width);
+                        System.Windows.Controls.Canvas.SetTop(ellipse, _rng.NextDouble() * height);
                         return ellipse;
-                    }
+                    };
                     
-                );
+                //);
                 Thread.Sleep(1);
             }
         }
@@ -65,54 +87,40 @@ namespace ThreadPoolR_Boczoń
         /*
          * StartGeneration()
          * StopGeneration
-         * EndGeneration
          */
         #region Thread operations 
-        public void StartGeneration() 
+        public void StartGeneration(NextIndex indGen, int amount, int start) 
         {
-           // if (thread.ThreadState == ThreadState.Unstarted)
+           _nextOutputIndex = start;
+            //    this.shift = shift;
+            this.amount = amount;
+            nextOutput = indGen;
+            if (thread == null)
             {
-                try
+                thread = new Thread(GeneratePoint);
+                thread.IsBackground = true;
                 {
-                    thread.Start();
+                    try
+                    {
+                        thread.Start();
+                    }
+                    catch (ThreadStartException e)
+                    {
+                        MessageBox.Show(e.Message);
+                    }
+                    return;
                 }
-                catch (ThreadStartException e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-                return;
             }
-            if(thread.ThreadState == ThreadState.Stopped)
-            {
-                try
-                {
-                    thread.Resume();
-                }
-                catch (ThreadStartException e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-                return;
-            }
-            
         }
+
         public void StopGeneration()
         {
-           
-            thread.Suspend();
+
+            endGeneration = true;
+            thread = null;
             
         }
-        public void EndGeneration()
-        {
-            try
-            {
-                thread.Abort();
-            }
-            catch(ThreadAbortException e)
-            {
-                MessageBox.Show(e.Message);
-            }
-        }
+        
         #endregion
 
     }

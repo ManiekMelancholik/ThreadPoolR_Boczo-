@@ -15,6 +15,44 @@ namespace ThreadPoolR_Boczoń
         private List<GenerationCommand> generationCommands2;
         private List<GenerationCommand> readList;
         private List<GenerationCommand> writeList;
+
+        private const int COMANDS_TABLE_LENGHT = 1500;
+        private GenerationCommand[] commandsTable;
+        private static NextIndex nextIndex = (int val) => {
+           
+            if (val >= COMANDS_TABLE_LENGHT)
+                val = 0;
+            return val;
+        };
+        private int _readerIndex;
+        private int readerIndex
+        {
+            get
+            {
+                _readerIndex = nextIndex.Invoke(_readerIndex);
+                return _readerIndex;
+            }
+            set { _readerIndex++; }
+        }
+
+
+        private static NextIndex lastWriter = (int val) => {
+            if (val >= COMANDS_TABLE_LENGHT)
+                val -= COMANDS_TABLE_LENGHT;
+            return val;
+        };
+        private int _lastWriterIndex;
+        private int lastWriterIndex
+        {
+            get
+            {
+                _lastWriterIndex = lastWriter.Invoke(_lastWriterIndex);
+                return _lastWriterIndex;
+            }
+        }
+        
+
+        private bool endDisplay;
         /*
          * ThreadMenager()
          */
@@ -25,8 +63,16 @@ namespace ThreadPoolR_Boczoń
             generationCommands2 = new List<GenerationCommand>();
             readList = generationCommands1;
             writeList = generationCommands1;
-           // GetPixelLock = new object();
 
+
+            commandsTable = new GenerationCommand[COMANDS_TABLE_LENGHT];
+            _readerIndex = 0;
+            _lastWriterIndex = 0;
+
+
+
+           // GetPixelLock = new object();
+           
         }
         #endregion
 
@@ -100,18 +146,19 @@ namespace ThreadPoolR_Boczoń
 
         private System.Windows.Controls.Canvas output;
         private List<PointGenerator> _GENERATORS;
-        public delegate System.Windows.Shapes.Ellipse GenerationCommand(double width, double height);
+        //public delegate System.Windows.Shapes.Ellipse GenerationCommand(double width, double height);
         private float tempo;
+        private int reserve;
         #region Class Setup
         private void CreateGenerators(int number)
         {
             _GENERATORS = new List<PointGenerator>();
             for(int i = 0; i<number; i++)
             {
-                _GENERATORS.Add(new PointGenerator(THREAD_COLORS[i], this));
+                _GENERATORS.Add(new PointGenerator(THREAD_COLORS[i], this, commandsTable));
             }
         }
-        public bool OutputSetup(object outputControl)
+        private bool OutputSetup(object outputControl)
         {
             if (outputControl.GetType() == typeof(System.Windows.Controls.Canvas))
             {
@@ -120,7 +167,7 @@ namespace ThreadPoolR_Boczoń
             }
             return false;
         }
-        public void SetTempo(float tempo)
+        private void SetTempo(float tempo)
         {
           
             this.tempo = tempo;
@@ -132,37 +179,34 @@ namespace ThreadPoolR_Boczoń
             this.SetTempo(tempo);
             this.OutputSetup(outputC);
             this.CreateGenerators(amount);
+            reserve = (5 * ((int)tempo / amount) + 1);
+            
         }
 
 
 
         private void PixelDrawing()
         {
-            //(System.TimeSpan.TicksPerSecond /
-            //AddPixelGenerationCommand(
-            //            () =>
-            //            {
-            //                System.Windows.Shapes.Ellipse ellipse = new System.Windows.Shapes.Ellipse();
-            //                ellipse.Fill = new SolidColorBrush(THREAD_COLORS[0]);
-            //                ellipse.Width = 10;
-            //                ellipse.Height = 10;
-            //                System.Windows.Controls.Canvas.SetLeft(ellipse, 10);
-            //                System.Windows.Controls.Canvas.SetTop(ellipse, 10);
-            //                return ellipse;
-            //            }
-            //        );
-           // Thread.Sleep((int) tempo);
-            while (writeList.Count < 4)
-            {
+            Thread.Sleep(1000);
+            //while (writeList.Count < 4)
+            //{
 
-            }
-            for (int i = 0; i < 100; i++) {
+            //}
+            // for (int i = 0; i < 100; i++) {
+            //int i = 0;
+            //int reserved = 
+            while (!endDisplay) {
+                if (readerIndex + 2> lastWriterIndex)
+                    StartAllThreads(reserve);
+
                 output.Dispatcher.Invoke(() =>
                 {
-                    output.Children.Add(writeList[i].Invoke(output.Width, output.Height));
+                    output.Children.Add(commandsTable[readerIndex].Invoke(output.Width, output.Height));
                 
                 });
+                readerIndex++;
                 Thread.Sleep((int)(1000/ tempo));
+                //i++;
             }
 
         }
@@ -176,9 +220,9 @@ namespace ThreadPoolR_Boczoń
                 return _PixelLock;
             }
         }
-public void AddPixelGenerationCommand(GenerationCommand command)
+        public void AddPixelGenerationCommand(GenerationCommand command)
         {
-            
+
             lock (GetPixelLock)
             {
                 writeList.Add(command);
@@ -187,8 +231,7 @@ public void AddPixelGenerationCommand(GenerationCommand command)
 
         /*
          * StartAllThreads()
-         * EndAllThreads();
-         * StopAllThreads();
+         * StopAllThreads()
          */
         #region Generators menagement
 
@@ -197,15 +240,19 @@ public void AddPixelGenerationCommand(GenerationCommand command)
             foreach (PointGenerator PG in _GENERATORS)
                 PG.StopGeneration();
         }
-        public void EndAllThreads()
+       
+        public void StartAllThreads(int amount)
         {
-            foreach (PointGenerator PG in _GENERATORS)
-                PG.EndGeneration();
-        }
-        public void StartAllThreads()
-        {
-            foreach (PointGenerator PG in _GENERATORS)
-                PG.StartGeneration();
+           // foreach (PointGenerator PG in _GENERATORS)
+                for (int i = 0; i < _GENERATORS.Count; i++)
+                    _GENERATORS[i].StartGeneration(
+                        (int value) => { 
+                            value += _GENERATORS.Count; 
+                            return (value >= COMANDS_TABLE_LENGHT) ? value - COMANDS_TABLE_LENGHT : value; 
+                        }, 
+                        amount, 
+                        lastWriterIndex + i - _GENERATORS.Count//because of lambda function above;
+                    );
         }
 
         #endregion
@@ -214,7 +261,6 @@ public void AddPixelGenerationCommand(GenerationCommand command)
         /*
          * Start()
          * Stop()
-         * End()
          */
         #region Thread menagement
 
@@ -224,6 +270,12 @@ public void AddPixelGenerationCommand(GenerationCommand command)
             {
                 ThreadPoolMainThread = new Thread(PixelDrawing);
                 ThreadPoolMainThread.IsBackground = true;
+                endDisplay = false;
+                StartAllThreads(reserve);
+                _lastWriterIndex += _GENERATORS.Count * reserve;
+                //Thread.Sleep(5000);
+                //StartAllThreads(reserve);
+                //StartAllThreads(10);
                 try
                 {
                     ThreadPoolMainThread.Start();
@@ -232,57 +284,23 @@ public void AddPixelGenerationCommand(GenerationCommand command)
                 {
                     MessageBox.Show(e.Message);
                 }
+                
                 return;
             }
 
-            if(ThreadPoolMainThread.ThreadState == ThreadState.Unstarted)
-            {
-                try
-                {
-                    ThreadPoolMainThread.Start();
-                }
-                catch (ThreadStartException e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-                return;
-            }
 
             if (ThreadPoolMainThread.ThreadState == ThreadState.Running)
             {
                 return;
             }
 
-            if(ThreadPoolMainThread.ThreadState == ThreadState.Suspended)
-            {
-                try
-                {
-                    ThreadPoolMainThread.Resume();
-                }
-                catch (ThreadStartException e)
-                {
-                    MessageBox.Show(e.Message);
-                }
-                return;
-            }
-
-
         }
         public void Stop()
         {
-            ThreadPoolMainThread.Suspend();
+            endDisplay = true;
+            ThreadPoolMainThread = null;
         }
-        public void End()
-        {
-            try
-            {
-                ThreadPoolMainThread.Abort();
-            }
-            catch (ThreadAbortException e)
-            {
-                MessageBox.Show(e.Message);
-            }
-        }
+
 
         #endregion
 

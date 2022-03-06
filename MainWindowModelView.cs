@@ -27,7 +27,7 @@ namespace ThreadPoolR_Boczoń
             window.DataContext = this;
             canvas = window.display;
             generatorsMenager = new ThreadMenager();
-            generatorsMenager.OutputSetup(canvas); 
+           // generatorsMenager.OutputSetup(canvas); 
         }
         #endregion
 
@@ -108,7 +108,7 @@ namespace ThreadPoolR_Boczoń
                         e =>
                         {
                             generatorsMenager.FullSetup(_numberOfThreads, _pixelsPerSecond, canvas);
-                            generatorsMenager.StartAllThreads();
+                           // generatorsMenager.StartAllThreads();
                             generatorsMenager.Start();
                         },
                         ce =>
@@ -156,8 +156,7 @@ namespace ThreadPoolR_Boczoń
                         {
                             generatorsMenager.StopAllThreads();
                             generatorsMenager.Stop();
-                            generatorsMenager.EndAllThreads();
-                            generatorsMenager.End();
+                            canvas.Children.Clear();
                         },
                         ce =>
                         {
@@ -172,19 +171,19 @@ namespace ThreadPoolR_Boczoń
         // private static System.Windows.Shapes.Ellipse elipse;
 
        // public delegate void UpdateCanvas(System.Windows.Shapes.Ellipse elipse);
-        public void DrawPoint(System.Windows.Shapes.Ellipse e)
-        {
-            var elipse = new System.Windows.Shapes.Ellipse();
-            elipse.Fill = Brushes.Red;
-            System.Windows.Controls.Canvas.SetLeft(elipse, 100);
-            System.Windows.Controls.Canvas.SetTop(elipse, 200);
-            elipse.Width = 10;
-            elipse.Height = 5;
+        //public void DrawPoint(System.Windows.Shapes.Ellipse e)
+        //{
+        //    var elipse = new System.Windows.Shapes.Ellipse();
+        //    elipse.Fill = Brushes.Red;
+        //    System.Windows.Controls.Canvas.SetLeft(elipse, 100);
+        //    System.Windows.Controls.Canvas.SetTop(elipse, 200);
+        //    elipse.Width = 10;
+        //    elipse.Height = 5;
             
-            canvas.Dispatcher.Invoke(()=>{ canvas.Children.Add(elipse); });
+        //    canvas.Dispatcher.Invoke(()=>{ canvas.Children.Add(elipse); });
           
                     
-        }
+        //}
     }
 
 
